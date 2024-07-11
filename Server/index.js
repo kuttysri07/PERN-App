@@ -1,23 +1,39 @@
 const express=require("express");
 const app=express();
-const port=5000;
+const port=process.env.PORT || 5000;
 const cors=require("cors");
 const { Pool } = require('pg');
+const path=require("path");
+require("dotenv").config();
+
+
+
 
 //middleware
 app.use(cors());
 app.use(express.json()); //req.body
 
+app.use(express.static(path.join(__dirname,"Client/todos/build")))
+
+if (process.env.NODE_ENV === "production"){
+    app.use(express.static(path.join(__dirname,"Client/todos/build")))
+}
+
+
 //connect database
+const devConfig ={
+    user: process.env.PG_USER,
+    host: process.env.PG_HOST,
+    database: process.env.PG_DATABASE,
+    password: process.env.PG_PASSWORD,
+    port: process.env.PG_PORT
+}
 
+const proConfig={
+    connectionString: process.env.DATABASE_URL
+}
 
-const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'world',
-    password: 'kuttysri07',
-    port: 5432,
-});
+const pool = new Pool(process.env.NODE_ENV === "production" ? proConfig : devConfig);
 
 //add new todo
 
@@ -82,6 +98,9 @@ app.delete("/todos/:id",async(req,res)=>{
     }
 })
 
+app.get("*",(req,res)=>{
+    res.sendFile(path.join(__dirname,"Client/todos/build/index.html"))
+})
 
 app.listen(port,()=>{
     console.log(`server ${port} has been started`)
